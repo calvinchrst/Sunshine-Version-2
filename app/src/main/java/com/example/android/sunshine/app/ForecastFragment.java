@@ -1,9 +1,11 @@
 package com.example.android.sunshine.app;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -29,8 +31,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Encapsulates fetching the forecast and displaying it as a {@link ListView} layout
@@ -40,6 +40,12 @@ public class ForecastFragment extends Fragment {
     private ArrayAdapter<String> mForecastAdapter;
 
     public ForecastFragment(){
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
     }
 
     @Override
@@ -57,10 +63,17 @@ public class ForecastFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_refresh){
-            new FetchWeatherTask().execute("94043");
+            updateWeather();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void updateWeather() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String locationValue = prefs.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default));
+        new FetchWeatherTask().execute(locationValue);
     }
 
     @Override
@@ -68,23 +81,11 @@ public class ForecastFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        // dummy data
-        String[] forecastDataArray = {
-                "Mon 6/23 - Sunny - 31/17",
-                "Tue 6/24 - Foggy - 21/8",
-                "Wed 6/25 - Cloudy - 22/17",
-                "Thurs 6/26 - Rainy - 18/11",
-                "Fri 6/27 - Foggy - 21/10",
-                "Sat 6/28 - Snowy - 23/18",
-                "Sun 6/29 - Sunny - 20/7"
-        };
-        List<String> forecastDataList = new ArrayList<>(Arrays.asList(forecastDataArray));
-
         mForecastAdapter = new ArrayAdapter<>(
                 getActivity(),
                 R.layout.list_item_forecast,
                 R.id.list_item_forecast_textview,
-                forecastDataList
+                new ArrayList<String>()
         );
 
         ListView listViewForecast = (ListView) rootView.findViewById(R.id.listview_forecast);
@@ -120,7 +121,14 @@ public class ForecastFragment extends Fragment {
         /**
          * Prepare the weather high/lows for presentation.
          */
-        private String formatHighLows(double high, double low) {
+        private String formatHighLows(double high, double low, String unitType) {
+            if (unitType.equals(getString(R.string.pref_units_imperial))) {
+                high = 9/5 * high + 32;
+                low = 9/5 * low + 32;
+            } else if (!unitType.equals(getString(R.string.pref_units_metric))) {
+                Log.d(LOG_TAG, "Unit type not found: " + unitType);
+            }
+
             // For presentation, assume the user doesn't care about tenths of a degree.
             long roundedHigh = Math.round(high);
             long roundedLow = Math.round(low);
@@ -137,6 +145,17 @@ public class ForecastFragment extends Fragment {
          */
         private String[] getWeatherDataFromJson(String forecastJsonStr, int numDays)
                 throws JSONException {
+
+            // Data is fetched in Celsius by default.
+            // If user prefers to see in Fahrenheit, convert the values here.
+            // We do this rather than fetching in Fahrenheit so that the user can
+            // change this option without us having to re-fetch the data once
+            // we start storing the values in a database.
+            SharedPreferences prefs =
+                    PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String unitType = prefs.getString(getString(R.string.pref_units_key),
+                    getString(R.string.pref_units_metric));
+
 
             // These are the names of the JSON objects that need to be extracted.
             final String OWM_LIST = "list";
@@ -156,7 +175,6 @@ public class ForecastFragment extends Fragment {
             // Since this data is also sent in-order and the first day is always the
             // current day, we're going to take advantage of that to get a nice
             // normalized UTC date for all of our weather.
-
             Time dayTime = new Time();
             dayTime.setToNow();
 
@@ -194,7 +212,7 @@ public class ForecastFragment extends Fragment {
                 double high = temperatureObject.getDouble(OWM_MAX);
                 double low = temperatureObject.getDouble(OWM_MIN);
 
-                highAndLow = formatHighLows(high, low);
+                highAndLow = formatHighLows(high, low, unitType);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 
