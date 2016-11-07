@@ -1,10 +1,8 @@
 package com.example.android.sunshine.app;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -14,6 +12,8 @@ import android.view.MenuItem;
 public class MainActivity extends ActionBarActivity {
 
     private final static String LOG_TAG = MainActivity.class.getSimpleName();
+    private String mLocation;
+    private final static String FORECASTFRAGMENT_TAG = "FORECASTFRAGMENT_TAG";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,8 +21,22 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new ForecastFragment())
+                    .add(R.id.container, new ForecastFragment(), FORECASTFRAGMENT_TAG)
                     .commit();
+        }
+        mLocation = Utility.getPreferredLocation(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String currentLocation = Utility.getPreferredLocation(this);
+        // check if location has changed
+        if (currentLocation != null && !currentLocation.equals(mLocation)) {
+            ForecastFragment ff = (ForecastFragment) getSupportFragmentManager().findFragmentByTag(
+                    FORECASTFRAGMENT_TAG);
+            if (ff != null) ff.onLocationChanged();
+            mLocation = currentLocation;
         }
     }
 
@@ -53,11 +67,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void showMap() {
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String location = sharedPrefs.getString(
-                getString(R.string.pref_location_key),
-                getString(R.string.pref_location_default)
-        );
+        String location = Utility.getPreferredLocation(this);
 
         Uri geoLocation = Uri.parse("geo:0,0?").buildUpon().appendQueryParameter("q", location)
                 .build();
