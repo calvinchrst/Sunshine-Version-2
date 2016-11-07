@@ -166,9 +166,9 @@ public class DetailActivity extends ActionBarActivity {
                 String weatherDesc = cursor.getString(COL_WEATHER_DESC);
                 boolean isMetric = Utility.isMetric(loader.getContext());
                 String weatherMax = Utility.formatTemperature(
-                        cursor.getDouble(COL_WEATHER_MAX_TEMP), isMetric);
+                        getActivity(), cursor.getDouble(COL_WEATHER_MAX_TEMP), isMetric);
                 String weatherMin = Utility.formatTemperature(
-                        cursor.getDouble(COL_WEATHER_MIN_TEMP), isMetric);
+                        getActivity(), cursor.getDouble(COL_WEATHER_MIN_TEMP), isMetric);
                 mForecastStr = String.format("%s - %s - %s/%s", weatherDate, weatherDesc,
                         weatherMin, weatherMax);
                 TextView detailTextView = (TextView) getView().findViewById(R.id.detail_text);
