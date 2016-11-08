@@ -3,6 +3,7 @@ package com.example.android.sunshine.app;
 import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.widget.CursorAdapter;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import android.widget.TextView;
  * from a {@link android.database.Cursor} to a {@link android.widget.ListView}.
  */
 public class ForecastAdapter extends CursorAdapter {
+    private static String LOG_TAG = ForecastAdapter.class.getSimpleName();
     private final int VIEW_TYPE_TODAY = 0;
     private final int VIEW_TYPE_FUTURE_DAY = 1;
 
@@ -51,8 +53,22 @@ public class ForecastAdapter extends CursorAdapter {
      */
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
+        // TODO: After returning from up navigation, bindView is invoked with weird cursor data.
 
         // get Data from cursor
+        int weatherConditionId = cursor.getInt(ForecastFragment.COL_WEATHER_CONDITION_ID);
+        int viewType = getItemViewType(cursor.getPosition());
+        int weatherImageResource;
+        if (viewType == VIEW_TYPE_TODAY) {
+            weatherImageResource = Utility.getArtResourceForWeatherCondition(weatherConditionId);
+        }
+        else if (viewType == VIEW_TYPE_FUTURE_DAY) {
+            weatherImageResource = Utility.getIconResourceForWeatherCondition(weatherConditionId);
+        } else {
+            Log.e(LOG_TAG, "Unknown viewType given");
+            return;
+        }
+
         String date = Utility.getFriendlyDayString(context,
                 cursor.getLong(ForecastFragment.COL_WEATHER_DATE));
         String weatherDesc = cursor.getString(ForecastFragment.COL_WEATHER_DESC);
@@ -64,7 +80,13 @@ public class ForecastAdapter extends CursorAdapter {
 
         // bind to View
         ViewHolder viewHolder = (ViewHolder) view.getTag();
-        viewHolder.iconView.setImageResource(R.drawable.ic_launcher);
+        try {
+            viewHolder.iconView.setImageResource(weatherImageResource);
+            Log.v(LOG_TAG, String.format("Weather: %s - %s - %s/%s", date, weatherDesc, high, low));
+        } catch (android.content.res.Resources.NotFoundException e) {
+            Log.e(LOG_TAG, String.format("Resources %s Not Found Exception. "
+                    + "Weather: %s - %s - %s/%s", e.getMessage(), date, weatherDesc, high, low));
+        }
         viewHolder.dateView.setText(date);
         viewHolder.descriptionView.setText(weatherDesc);
         viewHolder.highTempView.setText(high);

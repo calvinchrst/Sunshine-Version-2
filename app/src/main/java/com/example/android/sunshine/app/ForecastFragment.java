@@ -9,6 +9,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -107,7 +108,8 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         Cursor cursor = getActivity().getContentResolver().query(weatherForLocationUri, null, null,
                 null, sortOrder);
 
-        mForecastAdapter = new ForecastAdapter(getActivity(), cursor, 0);
+        mForecastAdapter = new ForecastAdapter(getActivity(), cursor,
+                CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
 
         ListView listViewForecast = (ListView) rootView.findViewById(R.id.listview_forecast);
         listViewForecast.setAdapter(mForecastAdapter);

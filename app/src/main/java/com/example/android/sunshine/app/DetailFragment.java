@@ -139,7 +139,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         if (! cursor.moveToFirst()) return;
 
         // getData from Cursor
-        int weatherId = cursor.getInt(COL_WEATHER_CONDITION_ID);
+        int weatherImageResource = Utility.getArtResourceForWeatherCondition(
+                cursor.getInt(COL_WEATHER_CONDITION_ID));
         Long fullDate = cursor.getLong(COL_WEATHER_DATE);
         String dayName = Utility.getDayName(getActivity(), fullDate);
         String monthDay = Utility.getFormattedMonthDay(getActivity(), fullDate);
@@ -162,7 +163,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mDateTextView.setText(monthDay);
         mHighTempTextView.setText(weatherMax);
         mLowTempTextView.setText(weatherMin);
-        mIconView.setImageResource(R.drawable.ic_launcher);
+        mIconView.setImageResource(weatherImageResource);
         mDescriptionTextView.setText(weatherDesc);
         mHumidityTextView.setText(humidity);
         mWindView.setText(wind);
