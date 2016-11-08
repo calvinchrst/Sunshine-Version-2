@@ -20,9 +20,7 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.text.format.Time;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class Utility {
     // Format used for storing dates in the database.  ALso used for converting those strings
@@ -50,11 +48,6 @@ public class Utility {
             temp = temperature;
         }
         return context.getString(R.string.format_temperature, temp);
-    }
-
-    static String formatDate(long dateInMillis) {
-        Date date = new Date(dateInMillis);
-        return DateFormat.getDateInstance().format(date);
     }
 
     /**
@@ -138,5 +131,23 @@ public class Utility {
         SimpleDateFormat monthDayFormat = new SimpleDateFormat("MMMM dd");
         String monthDayString = monthDayFormat.format(dateInMillis);
         return monthDayString;
+    }
+
+    public static String formatWind(Context context, double windSpeed, double windDirection,
+            boolean isMetric) {
+        if (isMetric) {
+            return context.getString(R.string.format_wind_kmh, windSpeed,
+                    degreeToCompass(windDirection));
+        } else {
+            return context.getString(R.string.format_wind_mph, windSpeed,
+                    degreeToCompass(windDirection));
+        }
+    }
+
+    private static String degreeToCompass(double degree) {
+        final String[] compassValues = {"N", "NE", "E", "SE", "S", "SW", "W", "NW", "N"};
+        degree = degree % 360;      // to handle cases of degree more than 360
+        int position = (int) Math.round(degree/45);
+        return compassValues[position];
     }
 }
